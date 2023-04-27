@@ -14,7 +14,7 @@ let package = Package(
             name: "swift-analyzer",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-            ],
-            path: "Sources"),
+            ]
+        ),
     ]
 )
