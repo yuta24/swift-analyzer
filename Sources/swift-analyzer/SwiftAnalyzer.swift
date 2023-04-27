@@ -1,8 +1,10 @@
 import ArgumentParser
 
 @main
-struct SwiftAnalyzer: ParsableCommand {
+struct SwiftAnalyzer: AsyncParsableCommand {
     static var configuration: CommandConfiguration {
-        .init(commandName: "swift-analyzer")
+        .init(
+            commandName: "swift-analyzer",
+            subcommands: [MaintIdx.self], defaultSubcommand: MaintIdx.self)
     }
 }
