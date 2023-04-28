@@ -11,10 +11,12 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-syntax", from: "508.0.0"),
     ],
     targets: [
+        .target(name: "CodeMetrics"),
         .executableTarget(
             name: "SwiftAnalyzer",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .target(name: "CodeMetrics"),
             ]
         ),
     ]
