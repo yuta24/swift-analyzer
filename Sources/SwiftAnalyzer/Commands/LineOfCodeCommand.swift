@@ -2,9 +2,13 @@ import Foundation
 import ArgumentParser
 
 extension SwiftAnalyzer {
-    struct LineOfCode: AsyncParsableCommand {
+    struct LineOfCodeCommand: AsyncParsableCommand {
         @Argument<String>
         var path
+
+        static var configuration: CommandConfiguration {
+            .init(commandName: "line-of-code")
+        }
 
         func run() async throws {
             let url = URL(fileURLWithPath: path)

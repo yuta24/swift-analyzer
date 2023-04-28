@@ -5,6 +5,6 @@ struct SwiftAnalyzer: AsyncParsableCommand {
     static var configuration: CommandConfiguration {
         .init(
             commandName: "swift-analyzer",
-            subcommands: [LineOfCode.self, MaintIdx.self])
+            subcommands: [LineOfCodeCommand.self, MaintIdxCommand.self])
     }
 }
