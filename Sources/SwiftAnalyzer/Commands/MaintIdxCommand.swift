@@ -15,9 +15,11 @@ extension SwiftAnalyzer {
             let url = URL(fileURLWithPath: path)
             let cyclomaticComplexity = try CyclomaticComplexity(contentOf: url)
 
-            print("""
-            Cyclomatic Complexity: \(cyclomaticComplexity.value)
-            """)
+            for function in cyclomaticComplexity.functions {
+                print("""
+                \(function.signature): \(function.complexity)
+                """)
+            }
         }
     }
 }

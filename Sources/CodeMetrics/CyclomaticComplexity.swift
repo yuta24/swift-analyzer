@@ -2,66 +2,144 @@ import Foundation
 import SwiftSyntax
 import SwiftSyntaxParser
 
+public class Function {
+    public var signature: String {
+        if parameters.isEmpty {
+            return name
+        } else {
+            return name + "(" + parameters.joined(separator: ":") + ")"
+        }
+    }
+
+    internal var name: String
+    internal var parameters: [String] = []
+
+    public internal(set) var complexity: Int = 1
+
+    internal init(name: String) {
+        self.name = name
+    }
+}
+
 public struct CyclomaticComplexity {
-    final class Visitor: SyntaxVisitor {
-        private(set) var counter: Int = 1
+    private class Visitor: SyntaxVisitor {
+        private(set) var namespace: [String] = []
+        private(set) var functions: [Function] = []
+
+        override func visit(_ node: ClassDeclSyntax) -> SyntaxVisitorContinueKind {
+            namespace.append(node.identifier.text)
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: ClassDeclSyntax) {
+            namespace.removeLast()
+        }
+
+        override func visit(_ node: ActorDeclSyntax) -> SyntaxVisitorContinueKind {
+            namespace.append(node.identifier.text)
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: ActorDeclSyntax) {
+            namespace.removeLast()
+        }
+
+        override func visit(_ node: StructDeclSyntax) -> SyntaxVisitorContinueKind {
+            namespace.append(node.identifier.text)
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: StructDeclSyntax) {
+            namespace.removeLast()
+        }
+
+        override func visit(_ node: ExtensionDeclSyntax) -> SyntaxVisitorContinueKind {
+            namespace.append(node.extensionKeyword.text)
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: ExtensionDeclSyntax) {
+            namespace.removeLast()
+        }
+
+        override func visit(_ node: FunctionParameterSyntax) -> SyntaxVisitorContinueKind {
+            if case .identifier(let text) = node.firstToken?.tokenKind {
+                functions.last?.parameters.append(text)
+            }
+            return .visitChildren
+        }
+
+        override func visit(_ node: FunctionDeclSyntax) -> SyntaxVisitorContinueKind {
+            let name: String = namespace.isEmpty ? node.identifier.text : namespace.joined(separator: ".") + "." + node.identifier.text
+            functions.append(.init(name: name))
+            return .visitChildren
+        }
+
+        override func visit(_ node: EnumDeclSyntax) -> SyntaxVisitorContinueKind {
+            namespace.append(node.enumKeyword.text)
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: EnumDeclSyntax) {
+            namespace.removeLast()
+        }
 
         override func visit(_ node: DoStmtSyntax) -> SyntaxVisitorContinueKind {
-            counter += 1
+            functions.last?.complexity += 1
             return .visitChildren
         }
 
         override func visit(_ node: ForInStmtSyntax) -> SyntaxVisitorContinueKind {
-            counter += 1
+            functions.last?.complexity += 1
             return .visitChildren
         }
 
         override func visit(_ node: GuardStmtSyntax) -> SyntaxVisitorContinueKind {
-            counter += 1
+            functions.last?.complexity += 1
             return .visitChildren
         }
 
         override func visit(_ node: IdentifierPatternSyntax) -> SyntaxVisitorContinueKind {
             if node.identifier.text == "forEach" {
-                counter += 1
+                functions.last?.complexity += 1
             }
 
             return .visitChildren
         }
 
         override func visit(_ node: IfStmtSyntax) -> SyntaxVisitorContinueKind {
-            counter += 1
+            functions.last?.complexity += 1
             return .visitChildren
         }
 
         override func visit(_ node: RepeatWhileStmtSyntax) -> SyntaxVisitorContinueKind {
-            counter += 1
+            functions.last?.complexity += 1
             return .visitChildren
         }
 
         override func visit(_ node: WhileStmtSyntax) -> SyntaxVisitorContinueKind {
-            counter += 1
+            functions.last?.complexity += 1
             return .visitChildren
         }
 
         override func visit(_ node: SwitchCaseLabelSyntax) -> SyntaxVisitorContinueKind {
-            counter += 1
+            functions.last?.complexity += 1
             return .visitChildren
         }
 
         override func visit(_ node: SwitchDefaultLabelSyntax) -> SyntaxVisitorContinueKind {
-            counter += 1
+            functions.last?.complexity += 1
             return .visitChildren
         }
     }
 
-    public let value: Int
+    public let functions: [Function]
 
     public init(contentOf url: URL) throws {
         let syntax = try SyntaxParser.parse(url)
         let visitor = Visitor(viewMode: .sourceAccurate)
         visitor.walk(syntax)
 
-        self.value = visitor.counter
+        self.functions = visitor.functions
     }
 }
