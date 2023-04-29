@@ -5,6 +5,10 @@ struct SwiftAnalyzer: AsyncParsableCommand {
     static var configuration: CommandConfiguration {
         .init(
             commandName: "swift-analyzer",
-            subcommands: [LineOfCodeCommand.self, MaintIdxCommand.self])
+            subcommands: [
+                ComplexityCommand.self,
+                LineOfCodeCommand.self,
+                MaintIdxCommand.self,
+            ])
     }
 }

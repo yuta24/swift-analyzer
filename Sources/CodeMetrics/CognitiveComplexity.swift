@@ -2,10 +2,38 @@ import Foundation
 import SwiftSyntax
 import SwiftSyntaxParser
 
-public struct CyclomaticComplexity {
+public struct CognitiveComplexity {
     private class Visitor: SyntaxVisitor {
         private(set) var namespace: [String] = []
-        private(set) var functions: [Function] = []
+        private(set) var extends: [Extend<Function, Int>] = []
+
+        override func visit(_ node: CodeBlockSyntax) -> SyntaxVisitorContinueKind {
+            guard let parent = node.parent else { return .visitChildren }
+
+            if parent.is(CatchClauseSyntax.self) == true
+                || parent.is(ForInStmtSyntax.self) == true
+                || parent.is(IfStmtSyntax.self) == true
+                || parent.is(RepeatWhileStmtSyntax.self) == true
+                || parent.is(SwitchStmtSyntax.self) == true
+                || parent.is(WhileStmtSyntax.self) == true {
+                extends.last?.other += 1
+            }
+
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: CodeBlockSyntax) {
+            guard let parent = node.parent else { return }
+
+            if parent.is(CatchClauseSyntax.self) == true
+                || parent.is(ForInStmtSyntax.self) == true
+                || parent.is(IfStmtSyntax.self) == true
+                || parent.is(RepeatWhileStmtSyntax.self) == true
+                || parent.is(SwitchStmtSyntax.self) == true
+                || parent.is(WhileStmtSyntax.self) == true {
+                extends.last?.other -= 1
+            }
+        }
 
         override func visit(_ node: ClassDeclSyntax) -> SyntaxVisitorContinueKind {
             namespace.append(node.identifier.text)
@@ -45,14 +73,14 @@ public struct CyclomaticComplexity {
 
         override func visit(_ node: FunctionParameterSyntax) -> SyntaxVisitorContinueKind {
             if case .identifier(let text) = node.firstToken?.tokenKind {
-                functions.last?.parameters.append(text)
+                extends.last?.value.parameters.append(text)
             }
             return .visitChildren
         }
 
         override func visit(_ node: FunctionDeclSyntax) -> SyntaxVisitorContinueKind {
             let name: String = namespace.isEmpty ? node.identifier.text : namespace.joined(separator: ".") + "." + node.identifier.text
-            functions.append(.init(name: name, complexity: 1))
+            extends.append(.init(value: .init(name: name, complexity: 0), other: 0))
             return .visitChildren
         }
 
@@ -66,50 +94,55 @@ public struct CyclomaticComplexity {
         }
 
         override func visit(_ node: CatchClauseSyntax) -> SyntaxVisitorContinueKind {
-            functions.last?.complexity += 1
+            extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
             return .visitChildren
         }
 
         override func visit(_ node: ForInStmtSyntax) -> SyntaxVisitorContinueKind {
-            functions.last?.complexity += 1
+            extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
             return .visitChildren
         }
 
         override func visit(_ node: GuardStmtSyntax) -> SyntaxVisitorContinueKind {
-            functions.last?.complexity += 1
+            extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
             return .visitChildren
         }
 
         override func visit(_ node: IdentifierPatternSyntax) -> SyntaxVisitorContinueKind {
             if node.identifier.text == "forEach" {
-                functions.last?.complexity += 1
+                extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
             }
 
             return .visitChildren
         }
 
-        override func visit(_ node: IfStmtSyntax) -> SyntaxVisitorContinueKind {
-            functions.last?.complexity += 1
+        override func visit(_ node: RepeatWhileStmtSyntax) -> SyntaxVisitorContinueKind {
+            extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
             return .visitChildren
         }
 
-        override func visit(_ node: RepeatWhileStmtSyntax) -> SyntaxVisitorContinueKind {
-            functions.last?.complexity += 1
+        override func visit(_ node: SwitchStmtSyntax) -> SyntaxVisitorContinueKind {
+            extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
+            return .visitChildren
+        }
+
+        override func visit(_ node: TokenSyntax) -> SyntaxVisitorContinueKind {
+            switch node.tokenKind {
+            case .breakKeyword where node.parent?.is(SwitchStmtSyntax.self) == false:
+                extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
+            case .ifKeyword:
+                extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
+            case .elseKeyword where node.parent?.is(GuardStmtSyntax.self) == false:
+                extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
+            default:
+                break
+            }
+
             return .visitChildren
         }
 
         override func visit(_ node: WhileStmtSyntax) -> SyntaxVisitorContinueKind {
-            functions.last?.complexity += 1
-            return .visitChildren
-        }
-
-        override func visit(_ node: SwitchCaseLabelSyntax) -> SyntaxVisitorContinueKind {
-            functions.last?.complexity += 1
-            return .visitChildren
-        }
-
-        override func visit(_ node: SwitchDefaultLabelSyntax) -> SyntaxVisitorContinueKind {
-            functions.last?.complexity += 1
+            extends.last?.value.complexity += 1 + (extends.last?.other ?? 0)
             return .visitChildren
         }
     }
@@ -121,6 +154,6 @@ public struct CyclomaticComplexity {
         let visitor = Visitor(viewMode: .sourceAccurate)
         visitor.walk(syntax)
 
-        self.functions = visitor.functions
+        self.functions = visitor.extends.map(\.value)
     }
 }
