@@ -1,0 +1,22 @@
+name: build
+
+on:
+  push:
+
+jobs:
+  macos:
+    strategy:
+      matrix:
+        macos:
+          - 13
+        xcode:
+          - 14.3
+    runs-on: macos-${{ matrix.macos }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.5.2
+      - name: Build
+        run:
+          swift build -c release
+        env:
+          DEVELOPER_DIR: /Application/Xcode_${{ matrix.xcode }}.app/Contents/Developer
