@@ -13,13 +13,11 @@ extension SwiftAnalyzer {
 
         func run() async throws {
             let url = URL(fileURLWithPath: path)
-            let cyclomaticComplexity = try CyclomaticComplexity(contentOf: url)
+            let index = try MaintainabilityIndex(contentOf: url)
 
-            for function in cyclomaticComplexity.functions {
-                print("""
-                \(function.signature): \(function.complexity)
-                """)
-            }
+            print("""
+            \(url.relativeString): \(index.value)
+            """)
         }
     }
 }

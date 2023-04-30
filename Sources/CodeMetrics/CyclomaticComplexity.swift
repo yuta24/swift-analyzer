@@ -116,6 +116,12 @@ public struct CyclomaticComplexity {
 
     public let functions: [Function]
 
+    public var file: Int {
+        functions.reduce(into: 0) { result, function in
+            result += function.complexity
+        }
+    }
+
     public init(contentOf url: URL) throws {
         let syntax = try SyntaxParser.parse(url)
         let visitor = Visitor(viewMode: .sourceAccurate)

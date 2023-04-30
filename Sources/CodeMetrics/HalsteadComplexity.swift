@@ -3,19 +3,15 @@ import Accelerate
 import SwiftSyntax
 import SwiftSyntaxParser
 
+private func calculate(operators: [String], operands: [String]) -> Float {
+    let vocabulary = Float(Set(operators).count + Set(operands).count)
+    let length = operators.count + operands.count
+
+    return Float(length) * log2(vocabulary)
+}
+
 public struct HalsteadComplexity {
-    public class Volume {
-        public var value: Float {
-            return Float(length) * log2(vocabulary)
-        }
-
-        internal var vocabulary: Float {
-            Float(Set(operators).count + Set(operands).count)
-        }
-        internal var length: Int {
-            operators.count + operands.count
-        }
-
+    internal class Volume {
         internal var operators: [String] = []
         internal var operands: [String] = []
     }
@@ -50,6 +46,42 @@ public struct HalsteadComplexity {
                 extends.last?.other.operands.append(text)
             }
             return .skipChildren
+        }
+
+        override func visit(_ node: ClassDeclSyntax) -> SyntaxVisitorContinueKind {
+            namespace.append(node.identifier.text)
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: ClassDeclSyntax) {
+            namespace.removeLast()
+        }
+
+        override func visit(_ node: ActorDeclSyntax) -> SyntaxVisitorContinueKind {
+            namespace.append(node.identifier.text)
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: ActorDeclSyntax) {
+            namespace.removeLast()
+        }
+
+        override func visit(_ node: StructDeclSyntax) -> SyntaxVisitorContinueKind {
+            namespace.append(node.identifier.text)
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: StructDeclSyntax) {
+            namespace.removeLast()
+        }
+
+        override func visit(_ node: ExtensionDeclSyntax) -> SyntaxVisitorContinueKind {
+            namespace.append(node.extensionKeyword.text)
+            return .visitChildren
+        }
+
+        override func visitPost(_ node: ExtensionDeclSyntax) {
+            namespace.removeLast()
         }
 
         override func visit(_ node: FunctionSignatureSyntax) -> SyntaxVisitorContinueKind {
@@ -217,7 +249,20 @@ public struct HalsteadComplexity {
         }
     }
 
-    public let functions: [Function]
+    public var functions: [Function] {
+        extends.map(\.value)
+    }
+    public var file: Int {
+        let (operators, operands): ([String], [String]) = extends.reduce(into: ([], [])) { result, extend in
+            result.0 += extend.other.operators
+            result.1 += extend.other.operands
+        }
+
+        let complexity = calculate(operators: operators, operands: operands)
+        return complexity.isFinite ? Int(complexity) : 0
+    }
+
+    private let extends: [Extend<Function, Volume>]
 
     public init(contentOf url: URL) throws {
         let syntax = try SyntaxParser.parse(url)
@@ -226,13 +271,10 @@ public struct HalsteadComplexity {
 
         visitor.extends
             .forEach {
-                if $0.other.value.isFinite {
-                    $0.value.complexity = Int($0.other.value)
-                } else {
-                    $0.value.complexity = 0
-                }
+                let complexity = calculate(operators: $0.other.operators, operands: $0.other.operands)
+                $0.value.complexity = complexity.isFinite ? Int(complexity) : 0
             }
 
-        self.functions = visitor.extends.map(\.value)
+        self.extends = visitor.extends
     }
 }
