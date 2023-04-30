@@ -19,4 +19,4 @@ jobs:
         run:
           swift build -c release
         env:
-          DEVELOPER_DIR: /Application/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+          DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
