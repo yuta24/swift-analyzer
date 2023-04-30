@@ -2,6 +2,17 @@ import Foundation
 import SwiftSyntax
 import SwiftSyntaxParser
 
+private extension Syntax {
+    var isScope: Bool {
+        return self.is(CatchClauseSyntax.self) == true
+            || self.is(ForInStmtSyntax.self) == true
+            || self.is(IfStmtSyntax.self) == true
+            || self.is(RepeatWhileStmtSyntax.self) == true
+            || self.is(SwitchStmtSyntax.self) == true
+            || self.is(WhileStmtSyntax.self) == true
+    }
+}
+
 public struct CognitiveComplexity {
     private class Visitor: SyntaxVisitor {
         private(set) var namespace: [String] = []
@@ -10,12 +21,7 @@ public struct CognitiveComplexity {
         override func visit(_ node: CodeBlockSyntax) -> SyntaxVisitorContinueKind {
             guard let parent = node.parent else { return .visitChildren }
 
-            if parent.is(CatchClauseSyntax.self) == true
-                || parent.is(ForInStmtSyntax.self) == true
-                || parent.is(IfStmtSyntax.self) == true
-                || parent.is(RepeatWhileStmtSyntax.self) == true
-                || parent.is(SwitchStmtSyntax.self) == true
-                || parent.is(WhileStmtSyntax.self) == true {
+            if parent.isScope {
                 extends.last?.other += 1
             }
 
@@ -25,12 +31,7 @@ public struct CognitiveComplexity {
         override func visitPost(_ node: CodeBlockSyntax) {
             guard let parent = node.parent else { return }
 
-            if parent.is(CatchClauseSyntax.self) == true
-                || parent.is(ForInStmtSyntax.self) == true
-                || parent.is(IfStmtSyntax.self) == true
-                || parent.is(RepeatWhileStmtSyntax.self) == true
-                || parent.is(SwitchStmtSyntax.self) == true
-                || parent.is(WhileStmtSyntax.self) == true {
+            if parent.isScope {
                 extends.last?.other -= 1
             }
         }

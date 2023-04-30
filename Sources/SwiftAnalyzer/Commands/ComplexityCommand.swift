@@ -7,6 +7,7 @@ extension SwiftAnalyzer {
         enum Kind: String, ExpressibleByArgument {
             case cognitive
             case cyclomatic
+            case halstead
         }
 
         @Argument<Kind>
@@ -29,6 +30,9 @@ extension SwiftAnalyzer {
                     return complexity.functions
                 case .cyclomatic:
                     let complexity = try CyclomaticComplexity(contentOf: url)
+                    return complexity.functions
+                case .halstead:
+                    let complexity = try HalsteadComplexity(contentOf: url)
                     return complexity.functions
                 }
             }()

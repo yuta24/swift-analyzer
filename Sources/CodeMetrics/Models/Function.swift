@@ -1,6 +1,8 @@
 import Foundation
 
 public class Function {
+    public internal(set) var complexity: Int
+
     public var signature: String {
         if parameters.isEmpty {
             return name
@@ -11,8 +13,6 @@ public class Function {
 
     internal var name: String
     internal var parameters: [String] = []
-
-    public internal(set) var complexity: Int
 
     internal init(name: String, complexity: Int) {
         self.name = name
