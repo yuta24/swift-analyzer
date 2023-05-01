@@ -1,0 +1,59 @@
+name: build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  macos:
+    strategy:
+      matrix:
+        macos:
+          - 13
+        xcode:
+          - 14.3
+    runs-on: macos-${{ matrix.macos }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.5.2
+      - name: Bootstrap
+        run: 
+          make bootstrap
+      - name: Build
+        run:
+          make release
+        env:
+          DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+      - name: Compression
+        run:
+          BUILD_PATH=$(swift build -c release --show-bin-path)
+          zip -j -X swift-analyzer.zip $BUILD_PATH/swift-analyzer
+      - name: Setup version
+        id: version
+        run: |
+          echo "::set-output name=version::$(cat version.txt)"
+      - name: Create Git Tag
+        run: 
+          git tag $(cat version.txt)
+          git push origin $(cat version.txt)
+      - name: Create Release
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
+            -d "{ \"tag_name\": \"${{ steps.version.outputs.version }}\", \"name\": \"${{ steps.version.outputs.version }}\"}" \
+            https://api.github.com/repos/${{ github.repository }}/releases
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload Release Asset
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          RELEASE_ID=$(curl --request GET \
+            --url https://api.github.com/repos/:owner/:repo/releases/tags/$VERSION \
+            --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
+            | jq -r '.id')
+          curl --request POST \
+            --url https://uploads.github.com/repos/:owner/:repo/releases/$RELEASE_ID/assets?name=my-asset \
+            --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
+            --header 'content-type: application/zip' \
+            --data-binary 'swift-analyzer.zip'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

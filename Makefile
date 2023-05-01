@@ -9,5 +9,9 @@ bootstrap: # bootstrap: setup project
 	@echo "enum Version { static let value = \"$(shell cat $(VERSION_FILE))\" }" > Sources/SwiftAnalyzer/Version.swift
 
 .PHONY: build
-build: # build: build the project
+build: # build: build the project for debug
 	swift build -c debug
+
+.PHONY: release
+release: # build: build the project for release
+	swift build -c release
