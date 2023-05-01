@@ -1,4 +1,5 @@
 VERSION_FILE := version.txt
+BIN_PATH := $(shell swift build -c release --show-bin-path)
 
 .PHONY: help
 help:
@@ -10,8 +11,12 @@ bootstrap: # bootstrap: setup project
 
 .PHONY: build
 build: # build: build the project for debug
-	swift build -c debug
+	@swift build -c debug
 
 .PHONY: release
 release: # build: build the project for release
-	swift build -c release
+	@swift build -c release
+
+.PHONY: archive
+archive: release # build: build the project for release
+	@zip -j -X swift-analyzer.zip $(BIN_PATH)/swift-analyzer

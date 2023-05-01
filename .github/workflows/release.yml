@@ -8,28 +8,26 @@ on:
 
 jobs:
   macos:
+    permissions:
+      contents: write
     runs-on: macos-13
     steps:
       - name: Checkout
         uses: actions/checkout@v3.5.2
       - name: Bootstrap
-        run: 
+        run: |
           make bootstrap
-      - name: Build
-        run:
-          make release
-      - name: Compression
-        run:
-          BUILD_PATH=$(swift build -c release --show-bin-path)
-          zip -j -X swift-analyzer.zip $BUILD_PATH/swift-analyzer
+      - name: Archive
+        run: |
+          make archive
       - name: Setup version
         id: version
         run: |
           echo "::set-output name=version::$(cat version.txt)"
       - name: Create Git Tag
-        run: 
-          git tag $(cat version.txt)
-          git push origin $(cat version.txt)
+        run: |
+          git tag ${{ steps.version.outputs.version }}
+          git push origin ${{ steps.version.outputs.version }}
       - name: Create Release
         run: |
           curl -X POST \
@@ -42,13 +40,13 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.version }}
           RELEASE_ID=$(curl --request GET \
-            --url https://api.github.com/repos/:owner/:repo/releases/tags/$VERSION \
+            --url https://api.github.com/repos/yuta24/swift-analyzer/releases/tags/$VERSION \
             --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
             | jq -r '.id')
-          curl --request POST \
-            --url https://uploads.github.com/repos/:owner/:repo/releases/$RELEASE_ID/assets?name=my-asset \
+          curl --http1.1 --request POST \
+            --url https://uploads.github.com/repos/yuta24/swift-analyzer/releases/$RELEASE_ID/assets?name=swift-analyzer.zip \
             --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
             --header 'content-type: application/zip' \
-            --data-binary 'swift-analyzer.zip'
+            --data-binary '@swift-analyzer.zip'
         env:
           GITHUB_TOKEN: ${{ github.token }}
