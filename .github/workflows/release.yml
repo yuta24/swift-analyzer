@@ -36,17 +36,17 @@ jobs:
             https://api.github.com/repos/${{ github.repository }}/releases
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - name: Upload Release Asset
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          RELEASE_ID=$(curl --request GET \
-            --url https://api.github.com/repos/yuta24/swift-analyzer/releases/tags/$VERSION \
-            --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
-            | jq -r '.id')
-          curl --http1.1 --request POST \
-            --url https://uploads.github.com/repos/yuta24/swift-analyzer/releases/$RELEASE_ID/assets?name=swift-analyzer.zip \
-            --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
-            --header 'content-type: application/zip' \
-            --data-binary '@swift-analyzer.zip'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      # - name: Upload Release Asset
+      #   run: |
+      #     VERSION=${{ steps.version.outputs.version }}
+      #     RELEASE_ID=$(curl --request GET \
+      #       --url https://api.github.com/repos/yuta24/swift-analyzer/releases/tags/$VERSION \
+      #       --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
+      #       | jq -r '.id')
+      #     curl --http1.1 --request POST \
+      #       --url https://uploads.github.com/repos/yuta24/swift-analyzer/releases/$RELEASE_ID/assets?name=swift-analyzer.zip \
+      #       --header 'authorization: Bearer ${{ env.GITHUB_TOKEN }}' \
+      #       --header 'content-type: application/zip' \
+      #       --data-binary '@swift-analyzer.zip'
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
