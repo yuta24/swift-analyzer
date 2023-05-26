@@ -1,1 +1,1 @@
-enum Version { static let value = "0.1.0" }
+enum Version { static let value = "0.1.1" }
